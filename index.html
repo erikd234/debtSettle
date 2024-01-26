@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debt Settlement Calculator</title>
+    <script>
+      function isCloseToZero(x) {
+        const epsilon = 0.1;
+        return Math.abs(x) <= epsilon;
+      }
+
+      function settleDebt(players) {
+        let payments = [];
+        players.sort((a, b) => b.amount - a.amount);
+        let hIdx = 0;
+        let lIdx = players.length - 1;
+        let pAmount, sendAmount;
+
+        while (hIdx <= lIdx) {
+          let winner = players[hIdx];
+          let loser = players[lIdx];
+          pAmount = winner.amount + loser.amount;
+
+          if (isCloseToZero(pAmount)) {
+            sendAmount = loser.amount;
+            winner.amount = 0;
+            loser.amount = 0;
+            payments.push({
+              from: loser.name,
+              to: winner.name,
+              amount: sendAmount,
+            });
+            hIdx++;
+            lIdx--;
+          } else if (pAmount > 0) {
+            sendAmount = loser.amount;
+            winner.amount += sendAmount;
+            payments.push({
+              from: loser.name,
+              to: winner.name,
+              amount: sendAmount,
+            });
+            lIdx--;
+          } else {
+            sendAmount = loser.amount - pAmount;
+            loser.amount = pAmount;
+            payments.push({
+              from: loser.name,
+              to: winner.name,
+              amount: sendAmount,
+            });
+            hIdx++;
+          }
+        }
+        payments = payments.filter((payment) => {
+          return payment.to != payment.from;
+        });
+        return payments;
+      }
+
+      function addPlayer() {
+        const playersList = document.getElementById("playersList");
+        const newPlayer = document.createElement("div");
+        newPlayer.className = "player";
+        newPlayer.innerHTML = `
+        <input type="text" placeholder="Name" class="player-name">
+        <input type="number" placeholder="Amount" class="player-amount">
+        <button onclick="removePlayer(this)">Remove</button>
+    `;
+        playersList.appendChild(newPlayer);
+      }
+
+      function removePlayer(button) {
+        button.parentElement.remove();
+      }
+
+      function calculatePayments() {
+        const playerElements = document.querySelectorAll(".player");
+        const players = Array.from(playerElements).map((player) => ({
+          name: player.querySelector(".player-name").value,
+          amount: parseFloat(player.querySelector(".player-amount").value),
+        }));
+
+        const payments = settleDebt(players);
+        displayPayments(payments);
+      }
+
+      function displayPayments(payments) {
+        const results = document.getElementById("results");
+        results.innerHTML = "";
+        payments.forEach((payment) => {
+          const paymentDiv = document.createElement("div");
+          paymentDiv.textContent = `${payment.from} pays $${Math.abs(payment.amount).toFixed(2)} to ${payment.to}`;
+          results.appendChild(paymentDiv);
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Debt Settlement Calculator</h1>
+    <h4>
+      IF your down use - numbers like -10. Dont forget to double check the math
+    </h4>
+    <div id="playersList">
+      <!-- Players will be added here -->
+    </div>
+    <button onclick="addPlayer()">Add Player</button>
+    <button onclick="calculatePayments()">Calculate Payments</button>
+    <div id="results">
+      <!-- Results will be displayed here -->
+    </div>
+  </body>
+</html>
